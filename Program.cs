@@ -44,7 +44,6 @@ namespace JurassicParkDB
       dino.Weight = decimal.Parse(dinoWeight);
       dino.EnclosureNumber = int.Parse(dinoEnclosure);
       dino.DateAcquired = DateTime.UtcNow;
-      Console.WriteLine(dino.Diet[0]);
 
       // Add this dinosaur to the dinosaurs list
       //   Dinosaurs.Add(item: dino);
@@ -53,8 +52,36 @@ namespace JurassicParkDB
       Db.SaveChanges(); // save changes
 
       Console.WriteLine();
-      Console.WriteLine($"The dinosaur named {dino.Name} has been added to inventory.");
-      Console.WriteLine();
+      Console.WriteLine("Here are the details for the new addition:");
+      WriteDinoDetail(dino);
+    }
+
+    static void Hatch()
+    {
+      // Create a new dinosaur
+      var dino = new Dinosaur();
+
+      // Assign a random name to the dinosaur from the array below.
+      string[] dinoNames = new string[10] { "Felecia", "Mongo", "Jonathan", "Peggy", "Xander", "Lexa", "Lane", "Xyler", "Mark", "Jason" };
+      Random randomName = new Random();
+      dino.Name = dinoNames[randomName.Next(0, 10)];
+      // Assign a random diet to the dino.
+      string[] dinoDiets = new string[2] { "Carnivore", "Herbivore" };
+      Random randomDiet = new Random();
+      dino.Diet = dinoDiets[randomDiet.Next(0, 2)];
+      // Assign a random weight to the dino. Being a baby, it won't be big.
+      //  https://www.scholastic.com/teachers/articles/teaching-content/dinosaur-eggs-and-babies/
+      Random randomWeight = new Random();
+      dino.Weight = randomWeight.Next(1, 11);
+      dino.DateAcquired = DateTime.UtcNow;
+
+      // Add this dinosaur to the dinosaurs database
+      Db.Dinosaurs.Add(dino);
+      Db.SaveChanges(); // save changes
+
+      Console.WriteLine("Here are the details for the baby:");
+      WriteDinoDetail(dino);
+
     }
 
     static void ViewAll()
@@ -77,6 +104,19 @@ namespace JurassicParkDB
       {
         WriteDinoDetail(dino);
       }
+      Console.WriteLine();
+    }
+
+    static void NeedsASheep(IEnumerable<Dinosaur> dinosAll)
+    // This method displays the lightest carnivore detail.
+    {
+      //Filter to carnivores only, sort ascending by weight.
+      var dinos = dinosAll.Where(dino => dino.Diet == "Carnivore").OrderBy(dino => dino.Weight);
+      Console.WriteLine();
+      Console.WriteLine("Awe....Look at the little dino. It needs a snack.");
+      Console.WriteLine("Send in the sheep!");
+      // Display the details for the smallest carnivore
+      WriteDinoDetail(dinos.FirstOrDefault());
       Console.WriteLine();
     }
     static void DisplayHeaviestDinosaurs(IEnumerable<Dinosaur> dinosUnsorted)
@@ -150,6 +190,21 @@ namespace JurassicParkDB
       Console.WriteLine();
     }
 
+    static void ReleaseDino(IEnumerable<Dinosaur> dinos)
+    {
+      Console.WriteLine();
+      Console.WriteLine("What is the name of the dinosaur you want to release?");
+      Console.Write("Dinosaur's name: ");
+      var dinoName = Console.ReadLine();
+      var releaseDino = Db.Dinosaurs.FirstOrDefault(dino => dino.Name.ToLower() == dinoName.ToLower());
+      Console.WriteLine($"{releaseDino.Name} was in enclosure # {releaseDino.EnclosureNumber}.");
+      releaseDino.EnclosureNumber = 0;
+      Db.SaveChanges(); //xxx
+      Console.WriteLine();
+      Console.WriteLine($"{releaseDino.Name} has been released.");
+      Console.WriteLine();
+    }
+
     static void DietarySummary(IEnumerable<Dinosaur> dinos)
     {
       int totalHerbavores = 0;
@@ -196,8 +251,10 @@ namespace JurassicParkDB
         Console.WriteLine();
         Console.WriteLine("Select an option.");
         Console.WriteLine("...type the letter enclosed in ' ' and hit Enter/Return...");
-        Console.WriteLine(" Add 'A'| Delete 'D'| Transfer 'T'| Exit 'E'");
-        Console.WriteLine("View all 'V'| Heaviest Dinosaurs 'H' | Summary of Diet 'S'");
+        Console.WriteLine();
+        Console.WriteLine("'A'dd | 'D'elete | 'T'ransfer | 'R'elease | 'H'atch");
+        Console.WriteLine("'V'iew all | 'L'argest | 'S'ummary of Diet");
+        Console.WriteLine("'N'eeds a Sheep | 'E'xit");
         Console.WriteLine();
         Console.Write("...:");
         input = Console.ReadLine();
@@ -216,7 +273,7 @@ namespace JurassicParkDB
             Console.WriteLine("You opted to view all dinosaurs.");
             ViewAll();
             break;
-          case "h":
+          case "l":
             Console.WriteLine("You opted to view the heaviest dinosaurs.");
             DisplayHeaviestDinosaurs(Db.Dinosaurs);
             break;
@@ -232,6 +289,18 @@ namespace JurassicParkDB
           case "s":
             Console.WriteLine("You opted to view the Dietary Summary.");
             DietarySummary(Db.Dinosaurs);
+            break;
+          case "h":
+            Console.WriteLine("An egg is hatching. Oh Joy!!!");
+            Hatch();
+            break;
+          case "r":
+            Console.WriteLine("You elected the option to release a dinosaur. That's brilliant!");
+            ReleaseDino(Db.Dinosaurs);
+            break;
+          case "n":
+            Console.WriteLine("You opted to view the Dietary Summary.");
+            NeedsASheep(Db.Dinosaurs);
             break;
           case "e":
             Console.WriteLine();
